@@ -1,0 +1,34 @@
+on:
+  release:
+    types:
+      - released
+
+jobs:
+  build-production:
+    runs-on: ubuntu-22.04
+    name: Build the service
+    steps:
+      - name: Checkout the repo
+        uses: actions/checkout@v2
+
+      - name: Find Tag
+        id: tagger
+        uses: jimschubert/query-tag-action@v1
+        with:
+          include: "v*"
+          commit-ish: "HEAD"
+
+      - name: Build the image
+        run: docker build --no-cache -t ${{ secrets.DOCKER_URL }}/paf-assignment:${{steps.tagger.outputs.tag}} .
+
+      - name: Docker login
+        run: echo $PASSWORD | docker login --username $USERNAME --password-stdin $REGISTRY
+        env:
+          USERNAME: ${{ secrets.DOCKER_USER }}
+          PASSWORD: ${{ secrets.DOCKER_PASSWORD }}
+          REGISTRY: ${{ secrets.DOCKER_URL }}
+
+      - name: Push the image
+        run: |
+          docker push ${{ secrets.DOCKER_URL }}/paf-assignment:${{steps.tagger.outputs.tag}}
+

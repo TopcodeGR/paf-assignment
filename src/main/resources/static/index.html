@@ -1,0 +1,54 @@
+<!doctype html>
+<html>
+<head>
+    <title>Exercise</title>
+    <link href="css/bootstrap.css" rel="stylesheet">
+    <script src="js/angular.js"></script>
+    <script src="js/exercise.js"></script>
+</head>
+
+<body ng-app="exercise">
+<div>
+    <h3>Tournaments</h3>
+    <div ng-repeat="tournament in tournaments">
+        <div>Tournament</div>
+        <span>Id: {{tournament.tournament_id}}</span>
+        <span>Reward amount: {{tournament.reward_amount}}</span>
+        <button ng-click="editTournament(tournament)">Edit</button>
+        <button ng-click="removeTournament(tournament.tournament_id)">Remove</button>
+        <div ng-if="tournament.players">
+            <div>Players</div>
+            <div ng-repeat="player in tournament.players">
+                <span>Id: {{player.player_id}}</span>
+                <span>Name: {{player.player_name}}</span>
+                <button ng-click="removePlayerFromTournament(tournament.tournament_id, player.player_id)">Remove</button>
+            </div>
+        </div>
+    </div>
+</div>
+<div>
+    <h5>Add tournament</h5>
+    <div>
+        Reward amount: <input ng-model="rewardAmount"/>
+        <button ng-click="addTournament(rewardAmount)">Add Tournament</button>
+    </div>
+</div>
+<div>
+    <h5>Edit tournament</h5>
+    <div>
+        <div>Id: {{editTournamentId}}</div>
+        Reward amount: <input ng-model="editRewardAmount"/>
+        <button ng-click="updateTournament(editTournamentId, editRewardAmount)">Update Tournament</button>
+    </div>
+</div>
+<div>
+    <h5>Add player into tournament</h5>
+    <div>
+        Tournament id: <input ng-model="playerTournamentId"/>
+        Player: <input ng-model="playerName"/>
+        <button ng-click="addPlayerIntoTournament(playerTournamentId, playerName)">Add Player</button>
+    </div>
+</div>
+
+</body>
+</html>

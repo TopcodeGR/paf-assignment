@@ -1,0 +1,17 @@
+package com.paf.exercise.exercise.authorization.domain;
+
+public enum AuthorityCode {
+    GET_TOURNAMENTS,
+    CREATE_TOURNAMENT,
+    UPDATE_TOURNAMENT,
+    DELETE_TOURNAMENT,
+    ADD_PLAYER_INTO_TOURNAMENT,
+    REMOVE_PLAYER_FROM_TOURNAMENT,
+    GET_PLAYERS_IN_TOURNAMENT,
+
+    GET_PLAYERS,
+    GET_PLAYER,
+    CREATE_PLAYER,
+    UPDATE_PLAYER,
+    DELETE_PLAYER
+}

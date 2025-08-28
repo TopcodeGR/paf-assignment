@@ -1,0 +1,209 @@
+<?xml version="1.1" encoding="UTF-8" standalone="no"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:ext="http://www.liquibase.org/xml/ns/dbchangelog-ext" xmlns:pro="http://www.liquibase.org/xml/ns/pro" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog-ext http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-ext.xsd http://www.liquibase.org/xml/ns/pro http://www.liquibase.org/xml/ns/pro/liquibase-pro-latest.xsd http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-latest.xsd">
+
+    <changeSet id="install_pg_crypto_extension" author="topalidis">
+        <sql>
+            create extension if not exists pgcrypto;
+        </sql>
+        <rollback>
+            delete extension if exists pgcrypto;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="create_paf_session_table" author="topalidis">
+        <sql>
+            CREATE TABLE paf_session (
+             id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+             session_id VARCHAR(100)  NOT NULL ,
+             access_token VARCHAR(5000) NOT NULL ,
+             refresh_token VARCHAR(5000) NOT NULL,
+             id_token VARCHAR(5000) NOT NULL,
+             user_id VARCHAR(100) NOT NULL,
+             is_admin BOOLEAN NOT NULL,
+             keycloak_session VARCHAR(100) NOT NULL
+            );
+        </sql>
+        <rollback>
+            DROP TABLE IF EXISTS paf_session;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="create_account_table" author="topalidis">
+        <sql>
+            CREATE TABLE account (
+                 id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                 user_id VARCHAR(255) NOT NULL,
+                 address VARCHAR(255)
+            );
+        </sql>
+        <rollback>
+            DROP TABLE IF EXISTS account;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="create_authority_table" author="topalidis">
+        <sql>
+            CREATE TABLE authority (
+               id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+               authority_code VARCHAR(255) NOT NULL
+            );
+        </sql>
+        <rollback>
+            DROP TABLE IF EXISTS authority;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="create_account_has_authority_table" author="topalidis">
+        <sql>
+            CREATE TABLE account_has_authority (
+                   account_id BIGINT NOT NULL,
+                   authority_id BIGINT NOT NULL,
+                   CONSTRAINT fk_account FOREIGN KEY(account_id) REFERENCES account(id) ON DELETE CASCADE ON UPDATE CASCADE,
+                   CONSTRAINT fk_authority FOREIGN KEY(authority_id) REFERENCES authority(id) ON DELETE CASCADE ON UPDATE CASCADE,
+                   CONSTRAINT pk_account_has_authority PRIMARY KEY(account_id,authority_id)
+            );
+        </sql>
+        <rollback>
+            DROP TABLE IF EXISTS authority;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="create_player_table" author="topalidis">
+        <sql>
+            CREATE TABLE player (
+              id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+              name VARCHAR(255) NOT NULL
+            );
+        </sql>
+        <rollback>
+            DROP TABLE IF EXISTS player CASCADE;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="create_tournament_table" author="topalidis">
+        <sql>
+            CREATE TABLE tournament (
+                id BIGINT PRIMARY KEY GENERATED ALWAYS AS IDENTITY,
+                name VARCHAR(255) NOT NULL UNIQUE,
+                reward_amount INT NOT NULL,
+                reward_currency VARCHAR(255) NOT NULL
+            );
+        </sql>
+        <rollback>
+            DROP TABLE IF EXISTS tournament CASCADE;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="create_tournament_has_player_table" author="topalidis">
+        <sql>
+            CREATE TABLE tournament_has_player (
+                player_id BIGINT NOT NULL,
+                tournament_id BIGINT NOT NULL,
+                CONSTRAINT fk_player_id FOREIGN KEY(player_id) REFERENCES player(id) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT fk_tournament_id FOREIGN KEY(tournament_id) REFERENCES tournament(id) ON DELETE CASCADE ON UPDATE CASCADE,
+                CONSTRAINT pk_tournament_has_player PRIMARY KEY(player_id,tournament_id)
+            );
+        </sql>
+        <rollback>
+            DROP TABLE IF EXISTS tournament_has_player;
+        </rollback>
+    </changeSet>
+
+    <changeSet id="populate_authorities" author="topalidis">
+        <sql>
+            INSERT INTO authority (authority_code)
+            VALUES  ('GET_TOURNAMENTS'),
+                    ('CREATE_TOURNAMENT'),
+                    ('UPDATE_TOURNAMENT'),
+                    ('DELETE_TOURNAMENT'),
+                    ('ADD_PLAYER_INTO_TOURNAMENT'),
+                    ('REMOVE_PLAYER_FROM_TOURNAMENT'),
+                    ('GET_PLAYERS_IN_TOURNAMENT'),
+                    ('GET_PLAYERS'),
+                    ('GET_PLAYER'),
+                    ('CREATE_PLAYER'),
+                    ('UPDATE_PLAYER'),
+                    ('DELETE_PLAYER');
+        </sql>
+
+        <rollback>
+            DELETE FROM authority
+            WHERE authority_code IN ('GET_TOURNAMENTS','CREATE_TOURNAMENT','UPDATE_TOURNAMENT',
+                                    'DELETE_TOURNAMENT','ADD_PLAYER_INTO_TOURNAMENT','REMOVE_PLAYER_FROM_TOURNAMENT',
+                                    'GET_PLAYERS_IN_TOURNAMENT','GET_PLAYERS','GET_PLAYER',
+                                    'CREATE_PLAYER','UPDATE_PLAYER','DELETE_PLAYER');
+        </rollback>
+    </changeSet>
+
+    <changeSet id="populate_accounts" author="topalidis">
+        <sql>
+            INSERT INTO account (user_id, address)
+                VALUES ('1cb5e723-df3a-4160-a35d-cc2b5141fe4f', 'Address of test user, Greece, 00 000'),
+                     ('99a666b9-3919-47ad-b8fe-9d7932bf1d72', 'Address of test admin user, Greece, 00 000');
+
+        </sql>
+        <rollback>
+            DELETE FROM account WHERE user_id in ('1cb5e723-df3a-4160-a35d-cc2b5141fe4f', '99a666b9-3919-47ad-b8fe-9d7932bf1d72');
+        </rollback>
+    </changeSet>
+
+    <changeSet id="add_authorities_to_accounts" author="topalidis">
+        <sql>
+            INSERT INTO account_has_authority (account_id, authority_id)
+            SELECT a.id AS account_id, au.id AS authority_id FROM account a, authority au
+            WHERE a.user_id in  ('1cb5e723-df3a-4160-a35d-cc2b5141fe4f', '99a666b9-3919-47ad-b8fe-9d7932bf1d72');
+        </sql>
+        <rollback>
+            DELETE  FROM account_has_authority WHERE account_id in ( SELECT id FROM account a
+                WHERE a.user_id in  ('1cb5e723-df3a-4160-a35d-cc2b5141fe4f', '99a666b9-3919-47ad-b8fe-9d7932bf1d72')
+            );
+        </rollback>
+    </changeSet>
+
+
+    <changeSet id="populate_players" author="topalidis">
+        <sql>
+            INSERT INTO player (name)
+            VALUES ('Player 1'),
+                   ('Player 2'),
+                   ('Player 3'),
+                   ('Player 4'),
+                   ('Player 5');
+        </sql>
+        <rollback>
+            DELETE FROM player WHERE name in ('Player 1', 'Player 2', 'Player 3', 'Player 4', 'Player 5');
+        </rollback>
+    </changeSet>
+
+    <changeSet id="populate_tournaments" author="topalidis">
+        <sql>
+            INSERT INTO tournament (name, reward_amount, reward_currency)
+            VALUES ('Tournament 1', 1000, 'EUR'),
+                   ('Tournament 2', 2500, 'USD');
+        </sql>
+
+        <rollback>
+            DELETE FROM tournament WHERE name in ('Tournament 1', 'Tournament 2');
+        </rollback>
+    </changeSet>
+
+    <changeSet id="add_players_to_tournaments" author="topalidis">
+        <sql>
+            INSERT INTO tournament_has_player (player_id, tournament_id)
+            SELECT p.id AS player_id, t.id AS tournament_id
+            FROM player p
+                     JOIN tournament t ON (
+                (p.name IN ('Player 1', 'Player 2') AND t.name = 'Tournament 1') OR
+                (p.name IN ('Player 3', 'Player 4', 'Player 5') AND t.name = 'Tournament 2')
+            );
+        </sql>
+        <rollback>
+            DELETE FROM tournament_has_player WHERE (
+                player_id IN (SELECT id FROM player p WHERE p.name IN ('Player 1', 'Player 2')) AND
+                tournament_id IN (SELECT id FROM tournament t WHERE t.name = 'Tournament 1')) OR (
+                player_id IN (SELECT id FROM player p WHERE p.name IN ('Player 3', 'Player 4', 'Player 5')) AND
+                tournament_id IN (SELECT id FROM tournament t WHERE t.name = 'Tournament 2')
+            );
+        </rollback>
+    </changeSet>
+</databaseChangeLog>
