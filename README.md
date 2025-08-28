@@ -184,7 +184,7 @@ Content-Type: application/json
 After logging in, and after making sure that the PAFSESSION cookie has been set, you don't have to do anything else for authorizing subsequent 
 requests to the API (for example you don't have to add the access token to the Authorization header).
 
-You can find a detailed API specification at: http://localhost:8080/swagger-ui/index.html
+You can find a detailed API specification at: https://paf-assignment.app.topalidis.online/swagger-ui/index.html
 
 Finally, you will find  a Postman collection with all the requests required by the assignment and which I used during development.
 This collection is in the root of the project, in a file named ```paf.postman_collection.json```
